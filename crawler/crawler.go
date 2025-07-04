@@ -15,6 +15,8 @@ import (
 	"spidey/validate"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type ModelResponse struct {
@@ -36,7 +38,7 @@ func Crawl(ctx context.Context, targetURL string, db *database.DBService, modelA
 
 	if err := db.Queries.UpdateURLStatus(ctx, generated.UpdateURLStatusParams{
 		Url:    targetURL,
-		Status: "classifying",
+		Status: generated.CrawlStatusClassifying,
 	}); err != nil {
 		log.Error("Failed to update status to classifying", "error", err)
 		return
@@ -53,12 +55,12 @@ func Crawl(ctx context.Context, targetURL string, db *database.DBService, modelA
 
 	if err := db.Queries.UpdateURLClassification(ctx, generated.UpdateURLClassificationParams{
 		Url: targetURL,
-		Classification: sql.NullString{
+		Classification: pgtype.Text{
 			String: prediction,
 			Valid:  true,
 		},
-		Confidence: sql.NullFloat64{
-			Float64: confidence,
+		Confidence: pgtype.Float4{
+			Float32: float32(confidence),
 			Valid:   true,
 		},
 	}); err != nil {
@@ -77,7 +79,7 @@ func Crawl(ctx context.Context, targetURL string, db *database.DBService, modelA
 
 	if err := db.Queries.UpdateURLStatus(ctx, generated.UpdateURLStatusParams{
 		Url:    targetURL,
-		Status: "crawling",
+		Status: generated.CrawlStatusCrawling,
 	}); err != nil {
 		log.Error("Failed to update status to crawling", "error", err)
 		return
@@ -95,7 +97,7 @@ func Crawl(ctx context.Context, targetURL string, db *database.DBService, modelA
 	err = db.ExecTx(ctx, func(q *generated.Queries) error {
 		if err := q.MarkURLAsCrawled(ctx, generated.MarkURLAsCrawledParams{
 			Url: targetURL,
-			Content: sql.NullString{
+			Content: pgtype.Text{
 				String: content,
 				Valid:  true,
 			},
@@ -195,7 +197,7 @@ func markAsFailed(ctx context.Context, db *database.DBService, url, errMsg strin
 	}
 	err := db.Queries.MarkURLAsFailed(ctx, generated.MarkURLAsFailedParams{
 		Url: url,
-		ErrorMessage: sql.NullString{
+		ErrorMessage: pgtype.Text{
 			String: errMsg,
 			Valid:  true,
 		},
