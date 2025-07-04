@@ -1,0 +1,7 @@
+db/
+api
+.env
+.git/
+.guthub/
+sqlc.yml
+.gitignore
