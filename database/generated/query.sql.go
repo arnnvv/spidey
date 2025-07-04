@@ -81,6 +81,16 @@ func (q *Queries) MarkURLAsFailed(ctx context.Context, arg MarkURLAsFailedParams
 	return err
 }
 
+const markURLAsSkipped = `-- name: MarkURLAsSkipped :exec
+UPDATE urls SET status = 'skipped', crawled_at = NOW()
+WHERE url = $1
+`
+
+func (q *Queries) MarkURLAsSkipped(ctx context.Context, url string) error {
+	_, err := q.db.Exec(ctx, markURLAsSkipped, url)
+	return err
+}
+
 const updateURLClassification = `-- name: UpdateURLClassification :exec
 UPDATE urls SET classification = $2, confidence = $3 WHERE url = $1
 `

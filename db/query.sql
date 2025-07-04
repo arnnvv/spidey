@@ -22,3 +22,7 @@ WHERE url = $1;
 UPDATE urls
 SET status = 'failed', error_message = $2, crawled_at = NOW()
 WHERE url = $1;
+
+-- name: MarkURLAsSkipped :exec
+UPDATE urls SET status = 'skipped', crawled_at = NOW()
+WHERE url = $1;

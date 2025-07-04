@@ -5,15 +5,15 @@ import (
 	"context"
 	"log/slog"
 	"os"
-	generated "spidey/database/sqlc"
+	"spidey/database/generated"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DBService struct {
-	pool    *pgxpool.Pool
-	queries *generated.Queries
+	Pool    *pgxpool.Pool
+	Queries *generated.Queries
 }
 
 func NewDBService(ctx context.Context) (*DBService, error) {
@@ -29,31 +29,31 @@ func NewDBService(ctx context.Context) (*DBService, error) {
 	slog.Info("Successfully connected to the database")
 
 	return &DBService{
-		pool:    pool,
-		queries: generated.New(pool),
+		Pool:    pool,
+		Queries: generated.New(pool),
 	}, nil
 }
 
 func (s *DBService) Close() {
-	s.pool.Close()
+	s.Pool.Close()
 }
 
 func (s *DBService) BeginTx(ctx context.Context) (pgx.Tx, error) {
-	return s.pool.Begin(ctx)
+	return s.Pool.Begin(ctx)
 }
 
 func (s *DBService) QueriesWithTx(tx pgx.Tx) *generated.Queries {
-	return s.queries.WithTx(tx)
+	return s.Queries.WithTx(tx)
 }
 
 func (s *DBService) ExecTx(ctx context.Context, fn func(*generated.Queries) error) error {
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.Pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
 
-	qtx := s.queries.WithTx(tx)
+	qtx := s.Queries.WithTx(tx)
 
 	err = fn(qtx)
 	if err != nil {
